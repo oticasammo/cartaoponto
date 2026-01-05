@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ponto Eletrônico - Óticas Ammo</title>
+    <style>
+        :root {
+            /* CORES PADRÃO ÓTICAS AMMO */
+            --primary-color: #000000; /* Fundo Preto */
+            --accent-color: #D4AF37; /* Dourado / Ocre */
+            --text-color: #ffffff;
+            --secondary-bg: #1a1a1a;
+            --success: #28a745;
+            --warning: #ffc107;
+            --danger: #dc3545;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--primary-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 400px;
+            background-color: var(--secondary-bg);
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 4px 20px rgba(212, 175, 55, 0.25);
+            text-align: center;
+            border: 1px solid #333;
+        }
+
+        h1 {
+            color: var(--accent-color);
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-size: 1.8rem;
+        }
+
+        .input-name {
+            width: 90%;
+            padding: 12px;
+            margin-bottom: 15px;
+            border-radius: 8px;
+            border: 1px solid #555;
+            background-color: #333;
+            color: white;
+            font-size: 1rem;
+            text-align: center;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        .input-name:focus {
+            border-color: var(--accent-color);
+        }
+
+        .clock {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin: 10px 0 20px 0;
+            font-variant-numeric: tabular-nums;
+            color: #eee;
+        }
+
+        .date {
+            color: var(--accent-color);
+            font-size: 0.9rem;
+            margin-bottom: 10px;
+            letter-spacing: 1px;
+        }
+
+        .btn-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        button {
+            padding: 15px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.1s, opacity 0.2s;
+            text-transform: uppercase;
+        }
+
+        button:active {
+            transform: scale(0.96);
+        }
+
+        .btn-entry { background-color: var(--success); color: white; }
+        .btn-lunch-out { background-color: var(--warning); color: #222; }
+        .btn-lunch-in { background-color: transparent; color: var(--warning); border: 2px solid var(--warning); }
+        .btn-exit { background-color: var(--danger); color: white; }
+        
+        .btn-whatsapp {
+            background-color: #25D366;
+            color: white;
+            width: 100%;
+            margin-top: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            font-size: 1rem;
+        }
+
+        .log-container {
+            margin-top: 20px;
+            text-align: left;
+            border-top: 1px solid #444;
+            padding-top: 10px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .log-item {
+            font-size: 0.85rem;
+            padding: 10px 5px;
+            border-bottom: 1px solid #333;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .log-item span:first-child {
+            color: #aaa;
+        }
+
+        .log-item span:last-child {
+            color: var(--accent-color);
+            font-weight: bold;
+        }
+
+        .status {
+            margin-bottom: 15px;
+            font-size: 0.9rem;
+            color: #bbb;
+            font-style: italic;
+        }
+        
+        /* Barra de rolagem estilizada */
+        .log-container::-webkit-scrollbar {
+            width: 5px;
+        }
+        .log-container::-webkit-scrollbar-thumb {
+            background: #444; 
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Óticas Ammo</h1>
+        
+        <div class="date" id="dateDisplay">--/--/----</div>
+        <div class="clock" id="clockDisplay">00:00:00</div>
+        
+        <input type="text" id="nomeFuncionario" class="input-name" placeholder="Digite seu Nome Completo">
+
+        <div class="status" id="statusMessage">Aguardando registro...</div>
+
+        <div class="btn-grid">
+            <button class="btn-entry" onclick="registrarPonto('Entrada')">🟢 Entrada</button>
+            <button class="btn-lunch-out" onclick="registrarPonto('Saída Almoço')">🍽️ Saiu</button>
+            <button class="btn-lunch-in" onclick="registrarPonto('Volta Almoço')">🍽️ Voltou</button>
+            <button class="btn-exit" onclick="registrarPonto('Saída')">🔴 Fim Dia</button>
+        </div>
+
+        <div class="log-container" id="logList">
+            </div>
+
+        <button class="btn-whatsapp" onclick="gerarRelatorioZap()">
+            <svg width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+                <path d="M13.601 2.326A7.854 7.854 0 0 0 7.994 0C3.627 0 .068 3.558.064 7.926c0 1.399.366 2.76 1.057 3.965L0 16l4.204-1.102a7.933 7.933 0 0 0 3.79.965h.004c4.368 0 7.926-3.558 7.93-7.93A7.898 7.898 0 0 0 13.6 2.326z"/>
+            </svg>
+            Enviar Ponto
+        </button>
+        <br>
+        <button style="background:transparent; color:#555; font-size:11px; text-transform:none;" onclick="limparRegistros()">Limpar Histórico do Dispositivo</button>
+    </div>
+
+    <script>
+        // Configurações
+        const WHATSAPP_NUMBER = "5541996509734";
+        const STORAGE_KEY = 'ponto_otica_ammo_db';
+        const NAME_KEY = 'nome_colaborador_ammo';
+        
+        // Relógio em tempo real
+        function updateClock() {
+            const now = new Date();
+            document.getElementById('clockDisplay').innerText = now.toLocaleTimeString('pt-BR');
+            document.getElementById('dateDisplay').innerText = now.toLocaleDateString('pt-BR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // Inicialização
+        let registros = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+        
+        // Carrega nome salvo se houver
+        const nomeSalvo = localStorage.getItem(NAME_KEY);
+        if (nomeSalvo) {
+            document.getElementById('nomeFuncionario').value = nomeSalvo;
+        }
+
+        renderizarLista();
+
+        function registrarPonto(tipo) {
+            // 1. Validação do Nome
+            const inputNome = document.getElementById('nomeFuncionario');
+            const nome = inputNome.value.trim();
+
+            if (!nome) {
+                alert("⚠️ ATENÇÃO:\nPor favor, digite seu NOME antes de registrar o ponto.");
+                inputNome.focus();
+                inputNome.style.borderColor = "#dc3545"; // Fica vermelho
+                return;
+            } else {
+                inputNome.style.borderColor = "#555"; // Volta ao normal
+                localStorage.setItem(NAME_KEY, nome); // Salva o nome para o futuro
+            }
+
+            // 2. Criação do Registro
+            const agora = new Date();
+            const dataHoje = agora.toLocaleDateString('pt-BR');
+            const horaAgora = agora.toLocaleTimeString('pt-BR');
+
+            const novoRegistro = {
+                id: Date.now(), // ID único
+                nome: nome,
+                data: dataHoje,
+                hora: horaAgora,
+                tipo: tipo
+            };
+
+            registros.unshift(novoRegistro); // Adiciona no topo
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(registros));
+            
+            document.getElementById('statusMessage').innerText = `✅ Registrado: ${tipo} às ${horaAgora}`;
+            renderizarLista();
+        }
+
+        function renderizarLista() {
+            const lista = document.getElementById('logList');
+            lista.innerHTML = '';
+            
+            // Filtra para mostrar apenas registros do nome atual (opcional, mas organizado)
+            // Se quiser ver todos, remova o filtro. Aqui mostrarei todos para controle geral.
+            registros.forEach(reg => {
+                const div = document.createElement('div');
+                div.className = 'log-item';
+                // Mostra: [Tipo] .... [Data - Hora]
+                div.innerHTML = `
+                    <div style="display:flex; flex-direction:column;">
+                        <span style="color:#fff; font-size:0.8rem;">${reg.nome || 'Sem nome'}</span>
+                        <span style="color:#888;">${reg.tipo}</span>
+                    </div>
+                    <span>${reg.data} <br> ${reg.hora}</span>
+                `;
+                lista.appendChild(div);
+            });
+        }
+
+        function gerarRelatorioZap() {
+            const inputNome = document.getElementById('nomeFuncionario');
+            const nomeAtual = inputNome.value.trim();
+
+            if (registros.length === 0) {
+                alert("Nenhum registro encontrado.");
+                return;
+            }
+            
+            if (!nomeAtual) {
+                alert("Digite seu nome para assinar o relatório.");
+                return;
+            }
+
+            // Pega a data de hoje para filtrar o relatório do dia (ou envia tudo se preferir)
+            // Aqui vou configurar para enviar o acumulado dos últimos registros
+            
+            let relatorioTexto = `*RELATÓRIO DE PONTO - ÓTICAS AMMO*\n`;
+            relatorioTexto += `👤 Colaborador: *${nomeAtual}*\n`;
+            relatorioTexto += `📅 Gerado em: ${new Date().toLocaleDateString('pt-BR')}\n`;
+            relatorioTexto += `-------------------------------\n`;
+            
+            // Filtra apenas registros desse colaborador
+            const meusRegistros = registros.filter(r => r.nome.toLowerCase() === nomeAtual.toLowerCase());
+            
+            // Pega os últimos 10 registros desse colaborador
+            const ultimosRegistros = meusRegistros.slice(0, 10); 
+
+            if(ultimosRegistros.length === 0) {
+                alert("Não há registros com este nome.");
+                return;
+            }
+
+            ultimosRegistros.forEach(reg => {
+                let icone = "👉";
+                if(reg.tipo.includes("Entrada")) icone = "🟢";
+                if(reg.tipo.includes("Saída Almoço")) icone = "🍽️ ➡️";
+                if(reg.tipo.includes("Volta Almoço")) icone = "🍽️ ⬅️";
+                if(reg.tipo.includes("Saída")) icone = "🔴";
+
+                relatorioTexto += `${icone} ${reg.data} - *${reg.hora}* (${reg.tipo})\n`;
+            });
+
+            relatorioTexto += `-------------------------------\n`;
+            
+            // Codifica para URL
+            const textoCodificado = encodeURIComponent(relatorioTexto);
+            const link = `https://wa.me/${WHATSAPP_NUMBER}?text=${textoCodificado}`;
+            
+            window.open(link, '_blank');
+        }
+
+        function limparRegistros() {
+            if(confirm("Deseja apagar o histórico salvo neste aparelho?")){
+                localStorage.removeItem(STORAGE_KEY);
+                // Não removemos o NAME_KEY para não precisar digitar o nome de novo
+                registros = [];
+                renderizarLista();
+                document.getElementById('statusMessage').innerText = "Histórico limpo.";
+            }
+        }
+    </script>
+</body>
+</html>
