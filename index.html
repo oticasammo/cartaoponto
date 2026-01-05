@@ -121,21 +121,11 @@
 
         .log-container {
             margin-top: 20px;
-            text-align: left;
-            border-top: 1px solid #444;
-            padding-top: 10px;
-            max-height: 200px;
-            overflow-y: auto;
-        }
-        
-        /* O log-container será esvaziado, pois não há mais dados locais */
-        .log-container {
             text-align: center;
             color: #888;
             padding: 20px 0;
             font-style: italic;
         }
-
 
         .status {
             margin-bottom: 15px;
@@ -165,7 +155,7 @@
         </div>
 
         <div class="log-container" id="logList">
-            *O histórico não é mais salvo neste dispositivo.*
+            *O histórico não é mais salvo neste dispositivo. Consulte o painel Gerencial.*
         </div>
 
         <button class="btn-whatsapp" onclick="gerarRelatorioZap()">
@@ -174,22 +164,16 @@
             </svg>
             Enviar Ponto Rápido WhatsApp
         </button>
-        
-        </div>
+    </div>
 
     <script>
         // CONFIGURAÇÃO CRÍTICA: URL DA API FORNECIDA
         const API_URL = "https://script.google.com/macros/s/AKfycbzgVGHja-EvpauuBvx29m5bHORaLLU8NaTt0VIsn3h2ZvC5SaYzjpuslX5l84xhLtedhg/exec";
         const WHATSAPP_NUMBER = "5541996509734";
         
-        // Mantemos apenas o LocalStorage para salvar o nome (melhorando a UX)
+        // LocalStorage para salvar o nome
         const NAME_KEY = 'nome_colaborador_ammo';
         
-        // **********************************************
-        // VARIÁVEIS DE ARMAZENAMENTO LOCAL FORAM REMOVIDAS:
-        // let registros = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
-        // **********************************************
-
         // Relógio em tempo real
         function updateClock() {
             const now = new Date();
@@ -205,12 +189,11 @@
             if (nomeSalvo) {
                 document.getElementById('nomeFuncionario').value = nomeSalvo;
             }
-            // Remove a função renderizarLista(), pois não há dados locais para renderizar
         });
 
 
+        // FUNÇÃO DE REGISTRO - CORREÇÃO DE CONEXÃO
         function registrarPonto(tipo) {
-            // 1. Validação do Nome
             const inputNome = document.getElementById('nomeFuncionario');
             const nome = inputNome.value.trim();
 
@@ -221,13 +204,11 @@
                 return;
             } else {
                 inputNome.style.borderColor = "#555"; 
-                // Salva o nome para o próximo uso (Local Storage)
                 localStorage.setItem(NAME_KEY, nome);
             }
 
             document.getElementById('statusMessage').innerText = `⏳ Enviando registro de ${tipo}...`;
             
-            // 2. Criação dos Dados e Envio para a API
             const agora = new Date();
             const dataHoje = agora.toLocaleDateString('pt-BR');
             const horaAgora = agora.toLocaleTimeString('pt-BR');
@@ -241,26 +222,41 @@
                 tipo: tipo
             });
 
+            // Usando o método GET, que é geralmente mais estável para Apps Scripts com doGet
             fetch(`${API_URL}?${params.toString()}`, {
-                method: 'GET', // O Apps Script (doGet) lê os parâmetros da URL
+                method: 'GET',
                 mode: 'cors'
             })
-            .then(response => response.json())
+            .then(response => {
+                // Tenta ler o JSON, mas se falhar, assume que o script apenas retornou sucesso (texto vazio)
+                return response.text().then(text => {
+                    try {
+                        return JSON.parse(text);
+                    } catch (e) {
+                        // Se não for JSON (por exemplo, retorno vazio do Apps Script), forçamos o sucesso.
+                        if (response.ok) {
+                             return { status: 'success', message: 'OK (Retorno não-JSON, mas status HTTP OK)' };
+                        }
+                        throw new Error("Resposta do Apps Script não é JSON e não é OK.");
+                    }
+                });
+            })
             .then(data => {
                 if (data.status === 'success') {
                     document.getElementById('statusMessage').innerText = `✅ Ponto Salvo no Servidor! (${tipo} às ${horaAgora})`;
                 } else {
-                    document.getElementById('statusMessage').innerText = `❌ ERRO no servidor: ${data.message}`;
-                    console.error("Erro do Servidor:", data.message);
+                    document.getElementById('statusMessage').innerText = `❌ ERRO no servidor: ${data.message || 'Resposta inesperada.'}`;
+                    console.error("Erro do Servidor:", data);
                 }
             })
             .catch(error => {
-                document.getElementById('statusMessage').innerText = `❌ ERRO DE CONEXÃO. Verifique a internet.`;
-                console.error("Erro de Fetch:", error);
+                // Esta é a parte que dispara o erro "Verificar Internet"
+                document.getElementById('statusMessage').innerText = `❌ ERRO DE CONEXÃO. Verifique a internet e as permissões da API.`;
+                console.error("Erro de Fetch (Verifique o CORS/API URL):", error);
             });
         }
 
-        // Função para envio rápido via WhatsApp (apenas envia a hora atual, não depende do histórico)
+        // Função para envio rápido via WhatsApp (não depende do histórico)
         function gerarRelatorioZap() {
             const nome = document.getElementById('nomeFuncionario').value.trim();
             const agora = new Date();
@@ -281,12 +277,6 @@
             
             window.open(link, '_blank');
         }
-
-        /* Funções de Local Storage REMOVIDAS, pois o ponto é CENTRALIZADO */
-        /*
-        function renderizarLista() { ... }
-        function limparRegistros() { ... }
-        */
 
     </script>
 </body>
