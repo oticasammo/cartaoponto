@@ -210,34 +210,16 @@
         <button style="background:transparent; color:#555; font-size:11px; text-transform:none;" onclick="limparRegistros()">Limpar Histórico do Dispositivo</button>
     </div>
 
+    <script> 
+/* ... (Seu código HTML/CSS/JS do Ponto anterior - V3.0) ... */
+
     <script>
-        // Configurações
-        const WHATSAPP_NUMBER = "5541996509734";
-        const STORAGE_KEY = 'ponto_otica_ammo_db';
-        const NAME_KEY = 'nome_colaborador_ammo';
+        // CONFIGURAÇÃO CRÍTICA: COLOQUE SEU URL AQUI
+        const API_URL = "URL_DO_SEU_APPSCRIPT_AQUI"; 
         
-        // Relógio em tempo real
-        function updateClock() {
-            const now = new Date();
-            document.getElementById('clockDisplay').innerText = now.toLocaleTimeString('pt-BR');
-            document.getElementById('dateDisplay').innerText = now.toLocaleDateString('pt-BR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-        }
-        setInterval(updateClock, 1000);
-        updateClock();
-
-        // Inicialização
-        let registros = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
-        
-        // Carrega nome salvo se houver
-        const nomeSalvo = localStorage.getItem(NAME_KEY);
-        if (nomeSalvo) {
-            document.getElementById('nomeFuncionario').value = nomeSalvo;
-        }
-
-        renderizarLista();
+        // ... (o restante das configurações e funções: updateClock, renderizarLista, etc.)
 
         function registrarPonto(tipo) {
-            // 1. Validação do Nome
             const inputNome = document.getElementById('nomeFuncionario');
             const nome = inputNome.value.trim();
 
@@ -248,48 +230,49 @@
                 return;
             } else {
                 inputNome.style.borderColor = "#555"; 
-                localStorage.setItem(NAME_KEY, nome); 
             }
 
-            // 2. Criação do Registro
             const agora = new Date();
             const dataHoje = agora.toLocaleDateString('pt-BR');
             const horaAgora = agora.toLocaleTimeString('pt-BR');
 
-            const novoRegistro = {
-                id: Date.now(), 
+            const dados = {
+                action: 'register',
                 nome: nome,
                 data: dataHoje,
                 hora: horaAgora,
                 tipo: tipo
             };
 
-            registros.unshift(novoRegistro); 
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(registros));
-            
-            document.getElementById('statusMessage').innerText = `✅ Registrado: ${tipo} às ${horaAgora}`;
-            renderizarLista();
-        }
-
-        function renderizarLista() {
-            const lista = document.getElementById('logList');
-            lista.innerHTML = '';
-            
-            registros.forEach(reg => {
-                const div = document.createElement('div');
-                div.className = 'log-item';
-                div.innerHTML = `
-                    <div style="display:flex; flex-direction:column;">
-                        <span style="color:#fff; font-size:0.8rem;">${reg.nome || 'Sem nome'}</span>
-                        <span style="color:#888;">${reg.tipo}</span>
-                    </div>
-                    <span>${reg.data} <br> ${reg.hora}</span>
-                `;
-                lista.appendChild(div);
+            // Envio para o Google Sheets via API
+            fetch(API_URL, {
+                method: 'POST',
+                body: JSON.stringify(dados),
+                headers: { 'Content-Type': 'application/json' }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    document.getElementById('statusMessage').innerText = `✅ Ponto Salvo no Servidor: ${tipo} às ${horaAgora}`;
+                    // Aqui você pode recarregar a lista do servidor se quiser, mas mantemos local para simplicidade
+                } else {
+                    document.getElementById('statusMessage').innerText = `❌ ERRO ao salvar: ${data.message}`;
+                }
+            })
+            .catch(error => {
+                document.getElementById('statusMessage').innerText = `❌ ERRO DE CONEXÃO: ${error.message}`;
             });
+            
         }
 
-        function gerarRelatorioZap() {
+        /* ... (O restante das funções do código anterior, removendo o uso de LocalStorage e a exportação para CSV) ... */
+    
+        // Configurações
+        const WHATSAPP_NUMBER = "5541996509734";
+        const STORAGE_KEY = 'ponto_otica_ammo_db';
+        const NAME_KEY = 'nome_colaborador_ammo';
+        
+         function gerarRelatorioZap() {
             const inputNome = document.getElementById('nomeFuncionario');
             const nomeAtual = inputNome.value.trim();
 
@@ -332,51 +315,8 @@
             const link = `https://wa.me/${WHATSAPP_NUMBER}?text=${textoCodificado}`;
             
             window.open(link, '_blank');
-        }
-
-        // NOVO CÓDIGO PARA EXPORTAR PARA EXCEL (CSV)
-        function exportarParaExcel() {
-            if (registros.length === 0) {
-                alert("Não há dados para exportar.");
-                return;
-            }
-            
-            // Cabeçalho do CSV
-            let csvContent = "Nome;Data;Hora;Tipo\n";
-
-            // Corpo do CSV (Formato: Nome;Data;Hora;Tipo)
-            // Os registros são invertidos (mais recentes primeiro), então exportaremos do mais antigo para o mais recente.
-            registros.slice().reverse().forEach(reg => {
-                csvContent += `${reg.nome};${reg.data};${reg.hora};${reg.tipo}\n`;
-            });
-
-            // Cria um link para download do arquivo CSV
-            const filename = `Relatorio_Ponto_Ammo_${new Date().toLocaleDateString('pt-BR').replace(/\//g, '-')}.csv`;
-            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement("a");
-            
-            link.href = URL.createObjectURL(blob);
-            link.setAttribute("download", filename);
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-
-            // Pergunta de Renovação Mensal
-            setTimeout(() => {
-                if (confirm("✅ EXPORTAÇÃO CONCLUÍDA!\n\nDeseja LIMPAR o histórico deste mês para começar o novo ciclo (renovação do relatório)?\n\nATENÇÃO: Este passo é irreversível! Certifique-se de que o download do arquivo CSV foi bem-sucedido.")) {
-                    limparRegistros(true);
-                }
-            }, 500);
-        }
-
-        function limparRegistros(aposExportacao = false) {
-            if (aposExportacao || confirm("Deseja apagar TODO o histórico salvo neste aparelho? Esta ação é irreversível.")) {
-                localStorage.removeItem(STORAGE_KEY);
-                registros = [];
-                renderizarLista();
-                document.getElementById('statusMessage').innerText = "Histórico limpo. Pronto para o novo mês.";
-            }
-        }
+    
     </script>
 </body>
 </html>
+
