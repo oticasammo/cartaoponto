@@ -207,9 +207,7 @@
             </svg>
             Enviar Últimos Registros WhatsApp
         </button>
-        <br>
-        <button style="background:transparent; color:#555; font-size:11px; text-transform:none;" onclick="limparRegistros()">Limpar Histórico do Dispositivo</button>
-    </div>
+        </div>
 
     <script>
         // Configurações LocalStorage (Offline)
@@ -365,22 +363,14 @@
             link.click();
             document.body.removeChild(link);
 
-            // Pergunta de Renovação Mensal (Fechamento do Mês)
+            // Mensagem de confirmação simples, sem a opção de limpeza
             setTimeout(() => {
-                if (confirm("✅ EXPORTAÇÃO CONCLUÍDA!\n\nDeseja LIMPAR o histórico deste mês para começar o novo ciclo (renovação do relatório)?\n\nATENÇÃO: Este passo é irreversível! Certifique-se de que o download do arquivo CSV foi bem-sucedido.")) {
-                    limparRegistros(true);
-                }
+                alert("✅ EXPORTAÇÃO CONCLUÍDA!\n\nO arquivo CSV foi baixado para o seu dispositivo. O histórico de ponto permanece salvo aqui.");
             }, 500);
         }
+        
+        // A FUNÇÃO limparRegistros FOI REMOVIDA DESTE CÓDIGO.
 
-        function limparRegistros(aposExportacao = false) {
-            if (aposExportacao || confirm("Deseja apagar TODO o histórico salvo neste aparelho? Esta ação é irreversível.")) {
-                localStorage.removeItem(STORAGE_KEY);
-                registros = [];
-                renderizarLista();
-                document.getElementById('statusMessage').innerText = "Histórico limpo. Pronto para o novo mês.";
-            }
-        }
     </script>
 </body>
 </html>
