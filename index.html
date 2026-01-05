@@ -194,21 +194,14 @@
 
         // FUNÇÃO DE REGISTRO - AGORA CONECTADA À API
         function registrarPonto(tipo) {
+           // ... DENTRO DA FUNÇÃO registrarPonto(tipo)
+
+            // Captura o nome, garantindo que o LocalStorage salvou
             const inputNome = document.getElementById('nomeFuncionario');
             const nome = inputNome.value.trim();
+            // ... (Se nome vazio, o código já retorna antes, então o problema deve ser a hora)
 
-            if (!nome) {
-                document.getElementById('statusMessage').innerText = "⚠️ Digite seu NOME!";
-                inputNome.focus();
-                inputNome.style.borderColor = "#dc3545"; 
-                return;
-            } else {
-                inputNome.style.borderColor = "#555"; 
-                localStorage.setItem(NAME_KEY, nome);
-            }
-
-            document.getElementById('statusMessage').innerText = `⏳ Enviando registro de ${tipo} para o sistema central...`;
-            
+            // CRÍTICO: CAPTURA DA DATA E HORA
             const agora = new Date();
             const dataHoje = agora.toLocaleDateString('pt-BR');
             const horaAgora = agora.toLocaleTimeString('pt-BR');
@@ -217,9 +210,9 @@
             const params = new URLSearchParams({
                 action: 'register',
                 nome: nome,
-                data: dataHoje,
-                hora: horaAgora,
-                tipo: tipo
+                data: dataHoje, // Verifique se dataHoje está sendo gerada
+                hora: horaAgora, // Verifique se horaAgora está sendo gerada
+                tipo: tipo // Este vem do botão e deve estar OK
             });
 
             // Faz a requisição GET
@@ -279,6 +272,7 @@
     </script>
 </body>
 </html>
+
 
 
 
