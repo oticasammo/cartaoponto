@@ -118,13 +118,45 @@
             gap: 10px;
             font-size: 1rem;
         }
+        
+        .btn-export {
+            background-color: #007bff; /* Azul para Exportar */
+            color: white;
+            width: 100%;
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            font-size: 1rem;
+        }
+
 
         .log-container {
             margin-top: 20px;
-            text-align: center;
-            color: #888;
-            padding: 20px 0;
-            font-style: italic;
+            text-align: left;
+            border-top: 1px solid #444;
+            padding-top: 10px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .log-item {
+            font-size: 0.85rem;
+            padding: 10px 5px;
+            border-bottom: 1px solid #333;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .log-item span:first-child {
+            color: #aaa;
+        }
+
+        .log-item span:last-child {
+            color: var(--accent-color);
+            font-weight: bold;
         }
 
         .status {
@@ -132,6 +164,14 @@
             font-size: 0.9rem;
             color: #bbb;
             font-style: italic;
+        }
+        
+        .log-container::-webkit-scrollbar {
+            width: 5px;
+        }
+        .log-container::-webkit-scrollbar-thumb {
+            background: #444; 
+            border-radius: 5px;
         }
     </style>
 </head>
@@ -155,23 +195,26 @@
         </div>
 
         <div class="log-container" id="logList">
-            *O histórico não é mais salvo neste dispositivo. Consulte o painel Gerencial.*
-        </div>
+            </div>
+
+        <button class="btn-export" onclick="exportarParaExcel()">
+            💾 Gerar Relatório (Excel/CSV)
+        </button>
 
         <button class="btn-whatsapp" onclick="gerarRelatorioZap()">
             <svg width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
                 <path d="M13.601 2.326A7.854 7.854 0 0 0 7.994 0C3.627 0 .068 3.558.064 7.926c0 1.399.366 2.76 1.057 3.965L0 16l4.204-1.102a7.933 7.933 0 0 0 3.79.965h.004c4.368 0 7.926-3.558 7.93-7.93A7.898 7.898 0 0 0 13.6 2.326z"/>
             </svg>
-            Enviar Ponto Rápido WhatsApp
+            Enviar Últimos Registros WhatsApp
         </button>
+        <br>
+        <button style="background:transparent; color:#555; font-size:11px; text-transform:none;" onclick="limparRegistros()">Limpar Histórico do Dispositivo</button>
     </div>
 
     <script>
-        // CONFIGURAÇÃO CRÍTICA: URL DA API FORNECIDA PELO USUÁRIO
-        const API_URL = "https://script.google.com/macros/s/AKfycbzgVGHja-EvpauuBvx29m5bHORaLLU8NaTt0VIsn3h2ZvC5SaYzjpuslX5l84xhLtedhg/exec";
+        // Configurações LocalStorage (Offline)
         const WHATSAPP_NUMBER = "5541996509734";
-        
-        // LocalStorage para salvar o nome (apenas conveniência)
+        const STORAGE_KEY = 'ponto_otica_ammo_db';
         const NAME_KEY = 'nome_colaborador_ammo';
         
         // Relógio em tempo real
@@ -183,91 +226,111 @@
         setInterval(updateClock, 1000);
         updateClock();
 
-        // Inicialização: Carrega nome salvo (se houver)
-        document.addEventListener('DOMContentLoaded', () => {
-            const nomeSalvo = localStorage.getItem(NAME_KEY);
-            if (nomeSalvo) {
-                document.getElementById('nomeFuncionario').value = nomeSalvo;
-            }
-        });
+        // Inicialização: Carrega dados do LocalStorage
+        let registros = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+        
+        // Carrega nome salvo se houver
+        const nomeSalvo = localStorage.getItem(NAME_KEY);
+        if (nomeSalvo) {
+            document.getElementById('nomeFuncionario').value = nomeSalvo;
+        }
 
-        // FUNÇÃO DE REGISTRO
+        renderizarLista();
+
         function registrarPonto(tipo) {
+            // 1. Validação do Nome
             const inputNome = document.getElementById('nomeFuncionario');
             const nome = inputNome.value.trim();
 
             if (!nome) {
-                document.getElementById('statusMessage').innerText = "⚠️ Digite seu NOME!";
+                alert("⚠️ ATENÇÃO:\nPor favor, digite seu NOME antes de registrar o ponto.");
                 inputNome.focus();
                 inputNome.style.borderColor = "#dc3545"; 
                 return;
             } else {
                 inputNome.style.borderColor = "#555"; 
-                localStorage.setItem(NAME_KEY, nome);
+                localStorage.setItem(NAME_KEY, nome); // Salva o nome
             }
 
-            document.getElementById('statusMessage').innerText = `⏳ Enviando registro de ${tipo}...`;
-            
+            // 2. Criação do Registro
             const agora = new Date();
             const dataHoje = agora.toLocaleDateString('pt-BR');
             const horaAgora = agora.toLocaleTimeString('pt-BR');
 
-            const params = new URLSearchParams({
-                action: 'register',
+            const novoRegistro = {
+                id: Date.now(), 
                 nome: nome,
                 data: dataHoje,
                 hora: horaAgora,
                 tipo: tipo
-            });
+            };
 
-            // Faz a requisição GET
-            fetch(`${API_URL}?${params.toString()}`, {
-                method: 'GET',
-                mode: 'cors'
-            })
-            .then(response => {
-                // Tratamento de resposta robusto para APIs do Google Apps Script
-                return response.text().then(text => {
-                    try {
-                        return JSON.parse(text);
-                    } catch (e) {
-                        if (response.ok) {
-                             // Considera sucesso mesmo se o retorno for texto vazio
-                             return { status: 'success', message: 'OK (Retorno não-JSON)' };
-                        }
-                        throw new Error("Resposta do Apps Script não é JSON e não é OK.");
-                    }
-                });
-            })
-            .then(data => {
-                if (data.status === 'success') {
-                    document.getElementById('statusMessage').innerText = `✅ Ponto Salvo no Servidor! (${tipo} às ${horaAgora})`;
-                } else {
-                    document.getElementById('statusMessage').innerText = `❌ ERRO no servidor: ${data.message || 'Resposta inesperada.'}`;
-                    console.error("Erro do Servidor:", data);
-                }
-            })
-            .catch(error => {
-                document.getElementById('statusMessage').innerText = `❌ ERRO DE CONEXÃO. Verifique a internet e as permissões da API.`;
-                console.error("Erro de Fetch (Verifique o CORS/API URL):", error);
+            // Salva no LocalStorage
+            registros.unshift(novoRegistro); // Adiciona no topo
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(registros));
+            
+            document.getElementById('statusMessage').innerText = `✅ Registrado: ${tipo} às ${horaAgora}`;
+            renderizarLista();
+        }
+
+        function renderizarLista() {
+            const lista = document.getElementById('logList');
+            lista.innerHTML = '';
+            
+            // Renderiza todos os registros salvos
+            registros.forEach(reg => {
+                const div = document.createElement('div');
+                div.className = 'log-item';
+                div.innerHTML = `
+                    <div style="display:flex; flex-direction:column;">
+                        <span style="color:#fff; font-size:0.8rem;">${reg.nome || 'Sem nome'}</span>
+                        <span style="color:#888;">${reg.tipo}</span>
+                    </div>
+                    <span>${reg.data} <br> ${reg.hora}</span>
+                `;
+                lista.appendChild(div);
             });
         }
 
-        // Função para envio rápido via WhatsApp (não depende do histórico)
         function gerarRelatorioZap() {
-            const nome = document.getElementById('nomeFuncionario').value.trim();
-            const agora = new Date();
-            const dataHora = agora.toLocaleDateString('pt-BR') + ' às ' + agora.toLocaleTimeString('pt-BR');
+            const inputNome = document.getElementById('nomeFuncionario');
+            const nomeAtual = inputNome.value.trim();
 
-            if (!nome) {
-                 alert("Digite seu nome antes de enviar a mensagem.");
-                 return;
+            if (!nomeAtual) {
+                alert("Digite seu nome para filtrar o relatório.");
+                return;
             }
             
-            let relatorioTexto = `*PONTO RÁPIDO - ÓTICAS AMMO*\n`;
-            relatorioTexto += `👤 Colaborador: *${nome}*\n`;
-            relatorioTexto += `⏰ Registro: *${dataHora}*\n`;
-            relatorioTexto += `\nLembrete: Este é apenas um registro de comunicação rápida. O registro oficial foi enviado ao sistema central.`;
+            if (registros.length === 0) {
+                alert("Nenhum registro encontrado.");
+                return;
+            }
+            
+            let relatorioTexto = `*RELATÓRIO DE PONTO - ÓTICAS AMMO*\n`;
+            relatorioTexto += `👤 Colaborador: *${nomeAtual}*\n`;
+            relatorioTexto += `📅 Gerado em: ${new Date().toLocaleDateString('pt-BR')}\n`;
+            relatorioTexto += `-------------------------------\n`;
+            
+            // Filtra apenas registros desse colaborador
+            const meusRegistros = registros.filter(r => r.nome.toLowerCase() === nomeAtual.toLowerCase());
+            const ultimosRegistros = meusRegistros.slice(0, 10); // Pega os últimos 10
+            
+            if(ultimosRegistros.length === 0) {
+                alert("Não há registros com este nome.");
+                return;
+            }
+
+            ultimosRegistros.forEach(reg => {
+                let icone = "👉";
+                if(reg.tipo.includes("Entrada")) icone = "🟢";
+                if(reg.tipo.includes("Saída Almoço")) icone = "🍽️ ➡️";
+                if(reg.tipo.includes("Volta Almoço")) icone = "🍽️ ⬅️";
+                if(reg.tipo.includes("Saída")) icone = "🔴";
+
+                relatorioTexto += `${icone} ${reg.data} - *${reg.hora}* (${reg.tipo})\n`;
+            });
+
+            relatorioTexto += `-------------------------------\n`;
             
             const textoCodificado = encodeURIComponent(relatorioTexto);
             const link = `https://wa.me/${WHATSAPP_NUMBER}?text=${textoCodificado}`;
@@ -275,6 +338,49 @@
             window.open(link, '_blank');
         }
 
+        // FUNÇÃO DE EXPORTAÇÃO PARA EXCEL (CSV)
+        function exportarParaExcel() {
+            if (registros.length === 0) {
+                alert("Não há dados para exportar.");
+                return;
+            }
+            
+            // Cabeçalho do CSV
+            let csvContent = "Nome;Data;Hora;Tipo\n";
+
+            // Corpo do CSV (Formato: Nome;Data;Hora;Tipo)
+            // Exporta do mais antigo para o mais recente (inverte a ordem do array)
+            registros.slice().reverse().forEach(reg => {
+                csvContent += `${reg.nome};${reg.data};${reg.hora};${reg.tipo}\n`;
+            });
+
+            // Cria um link para download do arquivo CSV
+            const filename = `Relatorio_Ponto_Ammo_${new Date().toLocaleDateString('pt-BR').replace(/\//g, '-')}.csv`;
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+            
+            link.href = URL.createObjectURL(blob);
+            link.setAttribute("download", filename);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            // Pergunta de Renovação Mensal (Fechamento do Mês)
+            setTimeout(() => {
+                if (confirm("✅ EXPORTAÇÃO CONCLUÍDA!\n\nDeseja LIMPAR o histórico deste mês para começar o novo ciclo (renovação do relatório)?\n\nATENÇÃO: Este passo é irreversível! Certifique-se de que o download do arquivo CSV foi bem-sucedido.")) {
+                    limparRegistros(true);
+                }
+            }, 500);
+        }
+
+        function limparRegistros(aposExportacao = false) {
+            if (aposExportacao || confirm("Deseja apagar TODO o histórico salvo neste aparelho? Esta ação é irreversível.")) {
+                localStorage.removeItem(STORAGE_KEY);
+                registros = [];
+                renderizarLista();
+                document.getElementById('statusMessage').innerText = "Histórico limpo. Pronto para o novo mês.";
+            }
+        }
     </script>
 </body>
 </html>
