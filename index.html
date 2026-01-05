@@ -209,7 +209,62 @@
         <br>
         <button style="background:transparent; color:#555; font-size:11px; text-transform:none;" onclick="limparRegistros()">Limpar Histórico do Dispositivo</button>
     </div>
+/* ... (Seu código HTML/CSS/JS do Ponto anterior - V3.0) ... */
 
+    <script>
+        // CONFIGURAÇÃO CRÍTICA: COLOQUE SEU URL AQUI
+        const API_URL = "https://script.google.com/macros/s/AKfycbzgVGHja-EvpauuBvx29m5bHORaLLU8NaTt0VIsn3h2ZvC5SaYzjpuslX5l84xhLtedhg/exec"; 
+        
+        // ... (o restante das configurações e funções: updateClock, renderizarLista, etc.)
+
+        function registrarPonto(tipo) {
+            const inputNome = document.getElementById('nomeFuncionario');
+            const nome = inputNome.value.trim();
+
+            if (!nome) {
+                alert("⚠️ ATENÇÃO:\nPor favor, digite seu NOME antes de registrar o ponto.");
+                inputNome.focus();
+                inputNome.style.borderColor = "#dc3545"; 
+                return;
+            } else {
+                inputNome.style.borderColor = "#555"; 
+            }
+
+            const agora = new Date();
+            const dataHoje = agora.toLocaleDateString('pt-BR');
+            const horaAgora = agora.toLocaleTimeString('pt-BR');
+
+            const dados = {
+                action: 'register',
+                nome: nome,
+                data: dataHoje,
+                hora: horaAgora,
+                tipo: tipo
+            };
+
+            // Envio para o Google Sheets via API
+            fetch(API_URL, {
+                method: 'POST',
+                body: JSON.stringify(dados),
+                headers: { 'Content-Type': 'application/json' }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    document.getElementById('statusMessage').innerText = `✅ Ponto Salvo no Servidor: ${tipo} às ${horaAgora}`;
+                    // Aqui você pode recarregar a lista do servidor se quiser, mas mantemos local para simplicidade
+                } else {
+                    document.getElementById('statusMessage').innerText = `❌ ERRO ao salvar: ${data.message}`;
+                }
+            })
+            .catch(error => {
+                document.getElementById('statusMessage').innerText = `❌ ERRO DE CONEXÃO: ${error.message}`;
+            });
+            
+        }
+
+        /* ... (O restante das funções do código anterior, removendo o uso de LocalStorage e a exportação para CSV) ... */
+    </script>
     <script>
         // Configurações
         const WHATSAPP_NUMBER = "5541996509734";
@@ -380,3 +435,4 @@
     </script>
 </body>
 </html>
+
