@@ -155,7 +155,7 @@
         </div>
 
         <div class="log-container" id="logList">
-            *O histórico não é mais salvo neste dispositivo. Consulte o painel Gerencial.*
+            *O ponto é salvo no sistema central. Consulte o painel Gerencial para o histórico.*
         </div>
 
         <button class="btn-whatsapp" onclick="gerarRelatorioZap()">
@@ -167,8 +167,8 @@
     </div>
 
     <script>
-        // CONFIGURAÇÃO CRÍTICA: URL DA API FORNECIDA PELO USUÁRIO
-        const API_URL = "https://script.google.com/macros/s/AKfycby1jevW-gMnxGlwKbfVFIYudTJStrmmoiOjk3_7QPyGghVC0uuUFvESuI3XHyYFnoDX0Q/exec";
+        // CONFIGURAÇÃO CRÍTICA: URL DA API ATUALIZADA
+        const API_URL = "https://script.google.com/macros/s/AKfycbxvTopn7Mh9MePT08mmMxiO5wJVZpGNsO74CqGlEmWRrXSdBM0nYP-Fl2UHE4rpOZClXg/exec";
         const WHATSAPP_NUMBER = "5541996509734";
         
         // LocalStorage para salvar o nome (apenas conveniência)
@@ -191,7 +191,8 @@
             }
         });
 
-        // FUNÇÃO DE REGISTRO
+
+        // FUNÇÃO DE REGISTRO - AGORA CONECTADA À API
         function registrarPonto(tipo) {
             const inputNome = document.getElementById('nomeFuncionario');
             const nome = inputNome.value.trim();
@@ -206,12 +207,13 @@
                 localStorage.setItem(NAME_KEY, nome);
             }
 
-            document.getElementById('statusMessage').innerText = `⏳ Enviando registro de ${tipo}...`;
+            document.getElementById('statusMessage').innerText = `⏳ Enviando registro de ${tipo} para o sistema central...`;
             
             const agora = new Date();
             const dataHoje = agora.toLocaleDateString('pt-BR');
             const horaAgora = agora.toLocaleTimeString('pt-BR');
 
+            // Prepara os parâmetros para o Google Apps Script
             const params = new URLSearchParams({
                 action: 'register',
                 nome: nome,
@@ -226,13 +228,12 @@
                 mode: 'cors'
             })
             .then(response => {
-                // Tratamento de resposta robusto para APIs do Google Apps Script
+                // Tratamento de resposta robusto
                 return response.text().then(text => {
                     try {
                         return JSON.parse(text);
                     } catch (e) {
                         if (response.ok) {
-                             // Considera sucesso mesmo se o retorno for texto vazio
                              return { status: 'success', message: 'OK (Retorno não-JSON)' };
                         }
                         throw new Error("Resposta do Apps Script não é JSON e não é OK.");
@@ -248,12 +249,12 @@
                 }
             })
             .catch(error => {
-                document.getElementById('statusMessage').innerText = `❌ ERRO DE CONEXÃO. Verifique a internet e as permissões da API.`;
-                console.error("Erro de Fetch (Verifique o CORS/API URL):", error);
+                document.getElementById('statusMessage').innerText = `❌ ERRO DE CONEXÃO. Verifique a internet ou o status da API.`;
+                console.error("Erro de Fetch:", error);
             });
         }
 
-        // Função para envio rápido via WhatsApp (não depende do histórico)
+        // Função para envio rápido via WhatsApp (não depende do histórico local)
         function gerarRelatorioZap() {
             const nome = document.getElementById('nomeFuncionario').value.trim();
             const agora = new Date();
@@ -267,7 +268,7 @@
             let relatorioTexto = `*PONTO RÁPIDO - ÓTICAS AMMO*\n`;
             relatorioTexto += `👤 Colaborador: *${nome}*\n`;
             relatorioTexto += `⏰ Registro: *${dataHora}*\n`;
-            relatorioTexto += `\nLembrete: Este é apenas um registro de comunicação rápida. O registro oficial foi enviado ao sistema central.`;
+            relatorioTexto += `\nLembrete: Este é um registro de comunicação rápida. O registro OFICIAL foi enviado ao sistema central.`;
             
             const textoCodificado = encodeURIComponent(relatorioTexto);
             const link = `https://wa.me/${WHATSAPP_NUMBER}?text=${textoCodificado}`;
@@ -278,4 +279,3 @@
     </script>
 </body>
 </html>
-
