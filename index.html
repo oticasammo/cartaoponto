@@ -3,17 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ponto Eletrônico - Óticas Ammo</title>
+    <title>Painel Gerencial - Óticas Ammo</title>
     <style>
         :root {
-            /* CORES PADRÃO ÓTICAS AMMO */
-            --primary-color: #000000; /* Fundo Preto */
-            --accent-color: #D4AF37; /* Dourado / Ocre */
+            --primary-color: #000000;
+            --accent-color: #D4AF37;
             --text-color: #ffffff;
             --secondary-bg: #1a1a1a;
-            --success: #28a745;
-            --warning: #ffc107;
-            --danger: #dc3545;
+            --table-header: #333;
         }
 
         body {
@@ -22,302 +19,191 @@
             color: var(--text-color);
             margin: 0;
             padding: 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            min-height: 100vh;
         }
 
-        .container {
-            width: 100%;
-            max-width: 400px;
-            background-color: var(--secondary-bg);
-            padding: 25px;
-            border-radius: 15px;
-            box-shadow: 0 4px 20px rgba(212, 175, 55, 0.25);
+        .header {
             text-align: center;
-            border: 1px solid #333;
+            margin-bottom: 30px;
         }
 
         h1 {
             color: var(--accent-color);
-            margin-bottom: 20px;
             text-transform: uppercase;
-            letter-spacing: 2px;
-            font-size: 1.8rem;
+            letter-spacing: 3px;
+            font-size: 2rem;
         }
 
-        .input-name {
-            width: 90%;
-            padding: 12px;
-            margin-bottom: 15px;
-            border-radius: 8px;
+        .dashboard-container {
+            background-color: var(--secondary-bg);
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 4px 20px rgba(212, 175, 55, 0.1);
+        }
+
+        #loading {
+            text-align: center;
+            color: #aaa;
+            padding: 50px;
+        }
+
+        /* Tabela de Dados */
+        #pontoTable {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        #pontoTable th, #pontoTable td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #333;
+            font-size: 0.9rem;
+        }
+
+        #pontoTable th {
+            background-color: var(--table-header);
+            color: var(--accent-color);
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .filter-controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            align-items: center;
+        }
+
+        select, input[type="date"] {
+            padding: 8px;
+            border-radius: 5px;
             border: 1px solid #555;
             background-color: #333;
             color: white;
-            font-size: 1rem;
-            text-align: center;
-            outline: none;
-            transition: border-color 0.3s;
         }
-
-        .input-name:focus {
-            border-color: var(--accent-color);
-        }
-
-        .clock {
-            font-size: 2.5rem;
-            font-weight: bold;
-            margin: 10px 0 20px 0;
-            font-variant-numeric: tabular-nums;
-            color: #eee;
-        }
-
-        .date {
-            color: var(--accent-color);
-            font-size: 0.9rem;
-            margin-bottom: 10px;
-            letter-spacing: 1px;
-        }
-
-        .btn-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-            margin-bottom: 20px;
-        }
-
-        button {
-            padding: 15px;
+        
+        .btn-refresh {
+            padding: 10px 15px;
+            background-color: var(--accent-color);
+            color: var(--primary-color);
             border: none;
-            border-radius: 8px;
-            font-size: 0.95rem;
-            font-weight: bold;
-            cursor: pointer;
-            transition: transform 0.1s, opacity 0.2s;
-            text-transform: uppercase;
-        }
-
-        button:active {
-            transform: scale(0.96);
-        }
-
-        .btn-entry { background-color: var(--success); color: white; }
-        .btn-lunch-out { background-color: var(--warning); color: #222; }
-        .btn-lunch-in { background-color: transparent; color: var(--warning); border: 2px solid var(--warning); }
-        .btn-exit { background-color: var(--danger); color: white; }
-        
-        .btn-whatsapp {
-            background-color: #25D366;
-            color: white;
-            width: 100%;
-            margin-top: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            font-size: 1rem;
-        }
-
-        .btn-export {
-            background-color: #007bff; /* Azul para Exportar */
-            color: white;
-            width: 100%;
-            margin-top: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            font-size: 1rem;
-        }
-
-        .log-container {
-            margin-top: 20px;
-            text-align: left;
-            border-top: 1px solid #444;
-            padding-top: 10px;
-            max-height: 200px;
-            overflow-y: auto;
-        }
-
-        .log-item {
-            font-size: 0.85rem;
-            padding: 10px 5px;
-            border-bottom: 1px solid #333;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .log-item span:first-child {
-            color: #aaa;
-        }
-
-        .log-item span:last-child {
-            color: var(--accent-color);
-            font-weight: bold;
-        }
-
-        .status {
-            margin-bottom: 15px;
-            font-size: 0.9rem;
-            color: #bbb;
-            font-style: italic;
-        }
-        
-        .log-container::-webkit-scrollbar {
-            width: 5px;
-        }
-        .log-container::-webkit-scrollbar-thumb {
-            background: #444; 
             border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
         }
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <h1>Óticas Ammo</h1>
-        
-        <div class="date" id="dateDisplay">--/--/----</div>
-        <div class="clock" id="clockDisplay">00:00:00</div>
-        
-        <input type="text" id="nomeFuncionario" class="input-name" placeholder="Digite seu Nome Completo">
-
-        <div class="status" id="statusMessage">Aguardando registro...</div>
-
-        <div class="btn-grid">
-            <button class="btn-entry" onclick="registrarPonto('Entrada')">🟢 Entrada</button>
-            <button class="btn-lunch-out" onclick="registrarPonto('Saída Almoço')">🍽️ Saiu</button>
-            <button class="btn-lunch-in" onclick="registrarPonto('Volta Almoço')">🍽️ Voltou</button>
-            <button class="btn-exit" onclick="registrarPonto('Saída')">🔴 Fim Dia</button>
-        </div>
-
-        <div class="log-container" id="logList">
-            </div>
-
-        <button class="btn-export" onclick="exportarParaExcel()">
-            💾 Gerar Relatório (Excel/CSV)
-        </button>
-
-        <button class="btn-whatsapp" onclick="gerarRelatorioZap()">
-            <svg width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
-                <path d="M13.601 2.326A7.854 7.854 0 0 0 7.994 0C3.627 0 .068 3.558.064 7.926c0 1.399.366 2.76 1.057 3.965L0 16l4.204-1.102a7.933 7.933 0 0 0 3.79.965h.004c4.368 0 7.926-3.558 7.93-7.93A7.898 7.898 0 0 0 13.6 2.326z"/>
-            </svg>
-            Enviar Ponto Rápido WhatsApp
-        </button>
-        <br>
-        <button style="background:transparent; color:#555; font-size:11px; text-transform:none;" onclick="limparRegistros()">Limpar Histórico do Dispositivo</button>
+    <div class="header">
+        <h1>Gerencial Ponto</h1>
+        <p>Visão em tempo real dos registros de ponto da equipe Ammo.</p>
     </div>
 
-    <script> 
-/* ... (Seu código HTML/CSS/JS do Ponto anterior - V3.0) ... */
+    <div class="dashboard-container">
+        
+        <div class="filter-controls">
+            <label for="filterNome">Filtrar Colaborador:</label>
+            <select id="filterNome" onchange="renderizarTabela()"></select>
+
+            <label for="filterData">Filtrar por Data:</label>
+            <input type="date" id="filterData" onchange="renderizarTabela()">
+            
+            <button class="btn-refresh" onclick="carregarDados()">🔄 Atualizar Dados</button>
+        </div>
+        
+        <div id="loading">Carregando dados do servidor...</div>
+
+        <table id="pontoTable">
+            <thead>
+                <tr>
+                    <th>Nome</th>
+                    <th>Data</th>
+                    <th>Hora</th>
+                    <th>Tipo</th>
+                </tr>
+            </thead>
+            <tbody id="pontoTableBody">
+                </tbody>
+        </table>
+    </div>
 
     <script>
         // CONFIGURAÇÃO CRÍTICA: COLOQUE SEU URL AQUI
-        const API_URL = https://script.google.com/macros/s/AKfycbzgVGHja-EvpauuBvx29m5bHORaLLU8NaTt0VIsn3h2ZvC5SaYzjpuslX5l84xhLtedhg/exec; 
-        
-        // ... (o restante das configurações e funções: updateClock, renderizarLista, etc.)
+        const API_URL = "URL_DO_SEU_APPSCRIPT_AQUI"; 
+        let todosRegistros = [];
 
-        function registrarPonto(tipo) {
-            const inputNome = document.getElementById('nomeFuncionario');
-            const nome = inputNome.value.trim();
+        document.addEventListener('DOMContentLoaded', carregarDados);
 
-            if (!nome) {
-                alert("⚠️ ATENÇÃO:\nPor favor, digite seu NOME antes de registrar o ponto.");
-                inputNome.focus();
-                inputNome.style.borderColor = "#dc3545"; 
-                return;
-            } else {
-                inputNome.style.borderColor = "#555"; 
-            }
+        function carregarDados() {
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('pontoTableBody').innerHTML = '';
 
-            const agora = new Date();
-            const dataHoje = agora.toLocaleDateString('pt-BR');
-            const horaAgora = agora.toLocaleTimeString('pt-BR');
-
-            const dados = {
-                action: 'register',
-                nome: nome,
-                data: dataHoje,
-                hora: horaAgora,
-                tipo: tipo
-            };
-
-            // Envio para o Google Sheets via API
-            fetch(API_URL, {
-                method: 'POST',
-                body: JSON.stringify(dados),
-                headers: { 'Content-Type': 'application/json' }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.status === 'success') {
-                    document.getElementById('statusMessage').innerText = `✅ Ponto Salvo no Servidor: ${tipo} às ${horaAgora}`;
-                    // Aqui você pode recarregar a lista do servidor se quiser, mas mantemos local para simplicidade
-                } else {
-                    document.getElementById('statusMessage').innerText = `❌ ERRO ao salvar: ${data.message}`;
-                }
-            })
-            .catch(error => {
-                document.getElementById('statusMessage').innerText = `❌ ERRO DE CONEXÃO: ${error.message}`;
-            });
-            
+            fetch(`${API_URL}?action=getData`)
+                .then(response => response.json())
+                .then(data => {
+                    todosRegistros = data.reverse(); // Inverte para mais recentes primeiro
+                    document.getElementById('loading').style.display = 'none';
+                    popularFiltros();
+                    renderizarTabela();
+                })
+                .catch(error => {
+                    console.error('Erro ao carregar dados:', error);
+                    document.getElementById('loading').innerText = '❌ Erro ao conectar com o banco de dados. Verifique o URL da API.';
+                });
         }
 
-        /* ... (O restante das funções do código anterior, removendo o uso de LocalStorage e a exportação para CSV) ... */
-    
-        // Configurações
-        const WHATSAPP_NUMBER = "5541996509734";
-        const STORAGE_KEY = 'ponto_otica_ammo_db';
-        const NAME_KEY = 'nome_colaborador_ammo';
-        
-         function gerarRelatorioZap() {
-            const inputNome = document.getElementById('nomeFuncionario');
-            const nomeAtual = inputNome.value.trim();
-
-            if (registros.length === 0) {
-                alert("Nenhum registro encontrado.");
-                return;
-            }
+        function popularFiltros() {
+            const select = document.getElementById('filterNome');
+            select.innerHTML = '<option value="">-- Todos os Nomes --</option>';
             
-            if (!nomeAtual) {
-                alert("Digite seu nome para assinar o relatório.");
-                return;
-            }
-            
-            let relatorioTexto = `*RELATÓRIO DE PONTO - ÓTICAS AMMO*\n`;
-            relatorioTexto += `👤 Colaborador: *${nomeAtual}*\n`;
-            relatorioTexto += `📅 Gerado em: ${new Date().toLocaleDateString('pt-BR')}\n`;
-            relatorioTexto += `-------------------------------\n`;
-            
-            const meusRegistros = registros.filter(r => r.nome.toLowerCase() === nomeAtual.toLowerCase());
-            const ultimosRegistros = meusRegistros.slice(0, 10); 
-
-            if(ultimosRegistros.length === 0) {
-                alert("Não há registros com este nome.");
-                return;
-            }
-
-            ultimosRegistros.forEach(reg => {
-                let icone = "👉";
-                if(reg.tipo.includes("Entrada")) icone = "🟢";
-                if(reg.tipo.includes("Saída Almoço")) icone = "🍽️ ➡️";
-                if(reg.tipo.includes("Volta Almoço")) icone = "🍽️ ⬅️";
-                if(reg.tipo.includes("Saída")) icone = "🔴";
-
-                relatorioTexto += `${icone} ${reg.data} - *${reg.hora}* (${reg.tipo})\n`;
+            const nomes = [...new Set(todosRegistros.map(r => r.nome))];
+            nomes.forEach(nome => {
+                const option = document.createElement('option');
+                option.value = nome;
+                option.textContent = nome;
+                select.appendChild(option);
             });
+        }
 
-            relatorioTexto += `-------------------------------\n`;
+        function renderizarTabela() {
+            const tbody = document.getElementById('pontoTableBody');
+            tbody.innerHTML = '';
             
-            const textoCodificado = encodeURIComponent(relatorioTexto);
-            const link = `https://wa.me/${WHATSAPP_NUMBER}?text=${textoCodificado}`;
+            const nomeFiltro = document.getElementById('filterNome').value;
+            const dataFiltro = document.getElementById('filterData').value;
             
-            window.open(link, '_blank');
-    
+            let dadosFiltrados = todosRegistros;
+
+            if (nomeFiltro) {
+                dadosFiltrados = dadosFiltrados.filter(r => r.nome === nomeFiltro);
+            }
+
+            if (dataFiltro) {
+                // Converte o formato do filtro (YYYY-MM-DD) para comparar com o formato salvo (DD/MM/YYYY)
+                const [ano, mes, dia] = dataFiltro.split('-');
+                const dataFormatada = `${dia}/${mes}/${ano}`;
+                dadosFiltrados = dadosFiltrados.filter(r => r.data === dataFormatada);
+            }
+
+            if (dadosFiltrados.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:#888;">Nenhum registro encontrado com os filtros aplicados.</td></tr>';
+                return;
+            }
+
+            dadosFiltrados.forEach(reg => {
+                const row = tbody.insertRow();
+                row.insertCell().textContent = reg.nome;
+                row.insertCell().textContent = reg.data;
+                row.insertCell().textContent = reg.hora;
+                
+                let tipoTexto = reg.tipo;
+                if (reg.tipo.includes('Saída Almoço')) tipoTexto = 'Almoço (Saída)';
+                if (reg.tipo.includes('Volta Almoço')) tipoTexto = 'Almoço (Volta)';
+                
+                row.insertCell().textContent = tipoTexto;
+            });
+        }
     </script>
 </body>
 </html>
-
-
