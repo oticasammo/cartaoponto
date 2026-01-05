@@ -167,11 +167,11 @@
     </div>
 
     <script>
-        // CONFIGURAÇÃO CRÍTICA: URL DA API FORNECIDA
+        // CONFIGURAÇÃO CRÍTICA: URL DA API FORNECIDA PELO USUÁRIO
         const API_URL = "https://script.google.com/macros/s/AKfycbzgVGHja-EvpauuBvx29m5bHORaLLU8NaTt0VIsn3h2ZvC5SaYzjpuslX5l84xhLtedhg/exec";
         const WHATSAPP_NUMBER = "5541996509734";
         
-        // LocalStorage para salvar o nome
+        // LocalStorage para salvar o nome (apenas conveniência)
         const NAME_KEY = 'nome_colaborador_ammo';
         
         // Relógio em tempo real
@@ -191,8 +191,7 @@
             }
         });
 
-
-        // FUNÇÃO DE REGISTRO - CORREÇÃO DE CONEXÃO
+        // FUNÇÃO DE REGISTRO
         function registrarPonto(tipo) {
             const inputNome = document.getElementById('nomeFuncionario');
             const nome = inputNome.value.trim();
@@ -213,7 +212,6 @@
             const dataHoje = agora.toLocaleDateString('pt-BR');
             const horaAgora = agora.toLocaleTimeString('pt-BR');
 
-            // Prepara os parâmetros para o Google Apps Script
             const params = new URLSearchParams({
                 action: 'register',
                 nome: nome,
@@ -222,20 +220,20 @@
                 tipo: tipo
             });
 
-            // Usando o método GET, que é geralmente mais estável para Apps Scripts com doGet
+            // Faz a requisição GET
             fetch(`${API_URL}?${params.toString()}`, {
                 method: 'GET',
                 mode: 'cors'
             })
             .then(response => {
-                // Tenta ler o JSON, mas se falhar, assume que o script apenas retornou sucesso (texto vazio)
+                // Tratamento de resposta robusto para APIs do Google Apps Script
                 return response.text().then(text => {
                     try {
                         return JSON.parse(text);
                     } catch (e) {
-                        // Se não for JSON (por exemplo, retorno vazio do Apps Script), forçamos o sucesso.
                         if (response.ok) {
-                             return { status: 'success', message: 'OK (Retorno não-JSON, mas status HTTP OK)' };
+                             // Considera sucesso mesmo se o retorno for texto vazio
+                             return { status: 'success', message: 'OK (Retorno não-JSON)' };
                         }
                         throw new Error("Resposta do Apps Script não é JSON e não é OK.");
                     }
@@ -250,7 +248,6 @@
                 }
             })
             .catch(error => {
-                // Esta é a parte que dispara o erro "Verificar Internet"
                 document.getElementById('statusMessage').innerText = `❌ ERRO DE CONEXÃO. Verifique a internet e as permissões da API.`;
                 console.error("Erro de Fetch (Verifique o CORS/API URL):", error);
             });
@@ -281,5 +278,3 @@
     </script>
 </body>
 </html>
-
-
