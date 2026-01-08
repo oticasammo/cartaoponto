@@ -6,9 +6,8 @@
     <title>Ponto Eletrônico - Óticas Ammo</title>
     <style>
         :root {
-            /* CORES PADRÃO ÓTICAS AMMO */
-            --primary-color: #000000; /* Fundo Preto */
-            --accent-color: #D4AF37; /* Dourado / Ocre */
+            --primary-color: #000000;
+            --accent-color: #D4AF37;
             --text-color: #ffffff;
             --secondary-bg: #1a1a1a;
             --success: #28a745;
@@ -37,6 +36,7 @@
             box-shadow: 0 4px 20px rgba(212, 175, 55, 0.25);
             text-align: center;
             border: 1px solid #333;
+            margin-bottom: 20px;
         }
 
         h1 {
@@ -59,10 +59,6 @@
             text-align: center;
             outline: none;
             transition: border-color 0.3s;
-        }
-
-        .input-name:focus {
-            border-color: var(--accent-color);
         }
 
         .clock {
@@ -98,41 +94,68 @@
             text-transform: uppercase;
         }
 
-        button:active {
-            transform: scale(0.96);
-        }
-
         .btn-entry { background-color: var(--success); color: white; }
         .btn-lunch-out { background-color: var(--warning); color: #222; }
         .btn-lunch-in { background-color: transparent; color: var(--warning); border: 2px solid var(--warning); }
         .btn-exit { background-color: var(--danger); color: white; }
         
-        .btn-whatsapp {
-            background-color: #25D366;
-            color: white;
+        .btn-export { background-color: #007bff; color: white; width: 100%; margin-top: 10px; }
+        .btn-whatsapp { background-color: #25D366; color: white; width: 100%; margin-top: 20px; display: flex; align-items: center; justify-content: center; gap: 10px; }
+        
+        /* Estilos do Calendário */
+        .calendar-container {
             width: 100%;
-            margin-top: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            font-size: 1rem;
-        }
-
-        .log-container {
-            margin-top: 20px;
+            max-width: 400px;
+            background-color: var(--secondary-bg);
+            padding: 15px;
+            border-radius: 15px;
             text-align: center;
-            color: #888;
-            padding: 20px 0;
-            font-style: italic;
+            border: 1px solid #333;
         }
-
-        .status {
-            margin-bottom: 15px;
-            font-size: 0.9rem;
-            color: #bbb;
-            font-style: italic;
+        .calendar-header {
+            color: var(--accent-color);
+            margin-bottom: 10px;
+            font-size: 1.2rem;
+            font-weight: bold;
         }
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 5px;
+            font-size: 0.75rem;
+        }
+        .day-header {
+            font-weight: bold;
+            color: #ccc;
+        }
+        .day-cell {
+            padding: 5px;
+            border-radius: 4px;
+            background-color: #333;
+            color: white;
+            opacity: 0.6;
+            cursor: default;
+        }
+        .day-cell.today {
+            background-color: var(--accent-color);
+            color: black;
+            font-weight: bold;
+            opacity: 1;
+        }
+        .day-cell.holiday {
+            background-color: var(--danger);
+            opacity: 0.4;
+        }
+        .day-cell.weekend {
+            background-color: #555;
+            opacity: 0.3;
+        }
+        .day-cell.empty {
+            background-color: transparent;
+            opacity: 0;
+            cursor: default;
+        }
+        
     </style>
 </head>
 <body>
@@ -155,26 +178,42 @@
         </div>
 
         <div class="log-container" id="logList">
-            *O ponto é salvo no sistema central. Consulte o painel Gerencial para o histórico.*
+            *Histórico salvo no dispositivo.*
         </div>
+
+        <button class="btn-export" onclick="exportarParaExcel()">
+            💾 Fechamento de Mês (Exportar e Limpar)
+        </button>
 
         <button class="btn-whatsapp" onclick="gerarRelatorioZap()">
             <svg width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
                 <path d="M13.601 2.326A7.854 7.854 0 0 0 7.994 0C3.627 0 .068 3.558.064 7.926c0 1.399.366 2.76 1.057 3.965L0 16l4.204-1.102a7.933 7.933 0 0 0 3.79.965h.004c4.368 0 7.926-3.558 7.93-7.93A7.898 7.898 0 0 0 13.6 2.326z"/>
             </svg>
-            Enviar Ponto Rápido WhatsApp
+            Enviar Últimos Registros WhatsApp
         </button>
     </div>
+    
+    <div class="calendar-container">
+        <div class="calendar-header" id="currentMonthYear">Calendário 2026</div>
+        <div class="calendar-grid" id="calendarGrid">
+            </div>
+    </div>
+
 
     <script>
-        // CONFIGURAÇÃO CRÍTICA: URL DA API ATUALIZADA
-        const API_URL = "https://script.google.com/macros/s/AKfycbwsPXcc03SinNLgpuf1zlQF3zzX5Q0vROCNYvJVq6-RnBvPDUYpN2uEVUB51290n8_R/exec";
+        // --- CONFIGURAÇÕES E INICIALIZAÇÃO ---
         const WHATSAPP_NUMBER = "5541996509734";
-        
-        // LocalStorage para salvar o nome (apenas conveniência)
+        const STORAGE_KEY = 'ponto_otica_ammo_db';
         const NAME_KEY = 'nome_colaborador_ammo';
+        const FERIADOS_2026 = [
+            '1/1/2026', '21/4/2026', '1/5/2026', '7/9/2026', 
+            '12/10/2026', '2/11/2026', '15/11/2026', '25/12/2026'
+            // NOTA: Carnaval (17/02) e Corpus Christi (04/06) são pontos facultativos e omitidos.
+        ];
+
+        let registros = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
         
-        // Relógio em tempo real
+        // Relógio e Data Display
         function updateClock() {
             const now = new Date();
             document.getElementById('clockDisplay').innerText = now.toLocaleTimeString('pt-BR');
@@ -183,98 +222,212 @@
         setInterval(updateClock, 1000);
         updateClock();
 
-        // Inicialização: Carrega nome salvo (se houver)
         document.addEventListener('DOMContentLoaded', () => {
             const nomeSalvo = localStorage.getItem(NAME_KEY);
             if (nomeSalvo) {
                 document.getElementById('nomeFuncionario').value = nomeSalvo;
             }
+            renderizarLista();
+            renderizarCalendarioAnual(); // Inicia o calendário
         });
 
+        // --- FUNÇÕES DE PONTO ---
 
-        // FUNÇÃO DE REGISTRO - AGORA CONECTADA À API
         function registrarPonto(tipo) {
-           // ... DENTRO DA FUNÇÃO registrarPonto(tipo)
-
-            // Captura o nome, garantindo que o LocalStorage salvou
             const inputNome = document.getElementById('nomeFuncionario');
             const nome = inputNome.value.trim();
-            // ... (Se nome vazio, o código já retorna antes, então o problema deve ser a hora)
 
-            // CRÍTICO: CAPTURA DA DATA E HORA
+            if (!nome) {
+                alert("⚠️ ATENÇÃO:\nPor favor, digite seu NOME antes de registrar o ponto.");
+                inputNome.focus();
+                return;
+            } else {
+                localStorage.setItem(NAME_KEY, nome);
+            }
+
             const agora = new Date();
             const dataHoje = agora.toLocaleDateString('pt-BR');
             const horaAgora = agora.toLocaleTimeString('pt-BR');
 
-            // Prepara os parâmetros para o Google Apps Script
-            const params = new URLSearchParams({
-                action: 'register',
+            const novoRegistro = {
+                id: Date.now(), 
                 nome: nome,
-                data: dataHoje, // Verifique se dataHoje está sendo gerada
-                hora: horaAgora, // Verifique se horaAgora está sendo gerada
-                tipo: tipo // Este vem do botão e deve estar OK
-            });
+                data: dataHoje,
+                hora: horaAgora,
+                tipo: tipo
+            };
 
-            // Faz a requisição GET
-            fetch(`${API_URL}?${params.toString()}`, {
-                method: 'GET',
-                mode: 'cors'
-            })
-            .then(response => {
-                // Tratamento de resposta robusto
-                return response.text().then(text => {
-                    try {
-                        return JSON.parse(text);
-                    } catch (e) {
-                        if (response.ok) {
-                             return { status: 'success', message: 'OK (Retorno não-JSON)' };
-                        }
-                        throw new Error("Resposta do Apps Script não é JSON e não é OK.");
-                    }
-                });
-            })
-            .then(data => {
-                if (data.status === 'success') {
-                    document.getElementById('statusMessage').innerText = `✅ Ponto Salvo no Servidor! (${tipo} às ${horaAgora})`;
-                } else {
-                    document.getElementById('statusMessage').innerText = `❌ ERRO no servidor: ${data.message || 'Resposta inesperada.'}`;
-                    console.error("Erro do Servidor:", data);
-                }
-            })
-            .catch(error => {
-                document.getElementById('statusMessage').innerText = `❌ ERRO DE CONEXÃO. Verifique a internet ou o status da API.`;
-                console.error("Erro de Fetch:", error);
+            registros.unshift(novoRegistro);
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(registros));
+            
+            document.getElementById('statusMessage').innerText = `✅ Registrado: ${tipo} às ${horaAgora}`;
+            renderizarLista();
+        }
+
+        function renderizarLista() {
+            const lista = document.getElementById('logList');
+            lista.innerHTML = '';
+            
+            // Renderiza 10 últimos registros
+            registros.slice(0, 10).forEach(reg => {
+                const div = document.createElement('div');
+                div.className = 'log-item';
+                div.innerHTML = `
+                    <div style="display:flex; flex-direction:column;">
+                        <span style="color:#fff; font-size:0.8rem;">${reg.nome || 'Sem nome'}</span>
+                        <span style="color:#888;">${reg.tipo}</span>
+                    </div>
+                    <span>${reg.data} <br> ${reg.hora}</span>
+                `;
+                lista.appendChild(div);
             });
         }
 
-        // Função para envio rápido via WhatsApp (não depende do histórico local)
-        function gerarRelatorioZap() {
-            const nome = document.getElementById('nomeFuncionario').value.trim();
-            const agora = new Date();
-            const dataHora = agora.toLocaleDateString('pt-BR') + ' às ' + agora.toLocaleTimeString('pt-BR');
+        // --- FUNÇÕES DE EXPORTAÇÃO E LIMPEZA (FECHAMENTO DE MÊS) ---
+        
+        function limparRegistros(aposExportacao = false) {
+            if (aposExportacao || confirm("Deseja apagar TODO o histórico salvo neste aparelho? Esta ação é irreversível.")) {
+                localStorage.removeItem(STORAGE_KEY);
+                registros = [];
+                renderizarLista();
+                document.getElementById('statusMessage').innerText = "Histórico limpo. Pronto para o novo mês.";
+            }
+        }
 
-            if (!nome) {
-                 alert("Digite seu nome antes de enviar a mensagem.");
-                 return;
+        function exportarParaExcel() {
+            if (registros.length === 0) {
+                alert("Não há dados para exportar.");
+                return;
+            }
+
+            if (!confirm("CONFIRMAÇÃO: Você está prestes a gerar o relatório de FECHAMENTO DE MÊS. Após o download, o histórico será apagado permanentemente para iniciar um novo ciclo. Continuar?")) {
+                return;
             }
             
-            let relatorioTexto = `*PONTO RÁPIDO - ÓTICAS AMMO*\n`;
-            relatorioTexto += `👤 Colaborador: *${nome}*\n`;
-            relatorioTexto += `⏰ Registro: *${dataHora}*\n`;
-            relatorioTexto += `\nLembrete: Este é um registro de comunicação rápida. O registro OFICIAL foi enviado ao sistema central.`;
+            let csvContent = "Nome;Data;Hora;Tipo\n";
+
+            // Exporta do mais antigo para o mais recente
+            registros.slice().reverse().forEach(reg => {
+                const safeNome = reg.nome.replace(/;|\n/g, ''); 
+                csvContent += `${safeNome};${reg.data};${reg.hora};${reg.tipo}\n`;
+            });
+
+            const filename = `Fechamento_Ponto_Ammo_${new Date().toLocaleDateString('pt-BR').replace(/\//g, '-')}.csv`;
+            const bom = "\uFEFF"; 
+            const blob = new Blob([bom + csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
             
-            const textoCodificado = encodeURIComponent(relatorioTexto);
-            const link = `https://wa.me/${WHATSAPP_NUMBER}?text=${textoCodificado}`;
-            
-            window.open(link, '_blank');
+            link.href = URL.createObjectURL(blob);
+            link.setAttribute("download", filename);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            // AÇÃO CRÍTICA: LIMPAR APÓS EXPORTAÇÃO (Fechamento)
+            setTimeout(() => {
+                alert("✅ FECHAMENTO DE MÊS CONCLUÍDO!\n\nO arquivo CSV foi baixado. O histórico local foi limpo para iniciar o próximo ciclo.");
+                limparRegistros(true); // Limpeza automática após confirmação do usuário
+            }, 1000);
+        }
+        
+        // --- FUNÇÕES DE CALENDÁRIO ---
+
+        function isFeriado(dia, mes, ano) {
+            const dataString = `${dia}/${mes}/${ano}`;
+            return FERIADOS_2026.includes(dataString);
         }
 
+        function renderizarCalendarioAnual() {
+            const container = document.getElementById('calendarGrid');
+            container.innerHTML = '';
+            
+            const monthNames = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+            const dayNames = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+            
+            // Adiciona cabeçalhos de dias para o primeiro mês (Janeiro)
+            dayNames.forEach(name => {
+                const header = document.createElement('div');
+                header.className = 'day-header';
+                header.textContent = name;
+                container.appendChild(header);
+            });
+            
+            document.getElementById('currentMonthYear').textContent = "Calendário de Dias Úteis 2026";
+            
+            const today = new Date();
+            const currentYear = 2026;
+            
+            for (let month = 0; month < 12; month++) {
+                
+                // Adiciona o nome do mês como separador
+                const monthSeparator = document.createElement('div');
+                monthSeparator.className = 'calendar-header';
+                monthSeparator.style.gridColumn = '1 / -1'; // Ocupa toda a largura
+                monthSeparator.style.fontSize = '0.9rem';
+                monthSeparator.style.marginTop = '10px';
+                monthSeparator.textContent = monthNames[month].toUpperCase();
+                container.appendChild(monthSeparator);
+                
+                // Adiciona os nomes dos dias da semana (repetido para cada mês para clareza)
+                dayNames.forEach(name => {
+                    const header = document.createElement('div');
+                    header.className = 'day-header';
+                    header.textContent = name;
+                    container.appendChild(header);
+                });
+                
+                const firstDayOfMonth = new Date(currentYear, month, 1);
+                const daysInMonth = new Date(currentYear, month + 1, 0).getDate();
+                const startingDay = firstDayOfMonth.getDay(); // 0=Dom, 1=Seg...
+                
+                // Preenche células vazias no início
+                for (let i = 0; i < startingDay; i++) {
+                    const emptyCell = document.createElement('div');
+                    emptyCell.className = 'day-cell empty';
+                    container.appendChild(emptyCell);
+                }
+                
+                // Preenche os dias do mês
+                for (let day = 1; day <= daysInMonth; day++) {
+                    const date = new Date(currentYear, month, day);
+                    const dayOfWeek = date.getDay(); // 0=Dom, 6=Sáb
+                    
+                    const dayCell = document.createElement('div');
+                    dayCell.textContent = day;
+                    dayCell.className = 'day-cell';
+                    
+                    // Verifica se é o dia de hoje
+                    if (date.toDateString() === today.toDateString()) {
+                        dayCell.classList.add('today');
+                    }
+                    
+                    // Feriado
+                    if (isFeriado(day, month + 1, currentYear)) {
+                        dayCell.classList.add('holiday');
+                        dayCell.title = "Feriado";
+                    }
+                    
+                    // Fim de Semana (Domingo)
+                    if (dayOfWeek === 0) { // Domingo
+                        dayCell.classList.add('weekend');
+                        dayCell.title = "Domingo (Não Útil)";
+                    }
+                    
+                    container.appendChild(dayCell);
+                }
+                
+                // Adiciona espaço vazio para completar a linha do grid
+                const lastDayOfMonth = new Date(currentYear, month, daysInMonth);
+                const endingDay = lastDayOfMonth.getDay(); 
+                if (endingDay < 6) {
+                    for (let i = endingDay + 1; i <= 6; i++) {
+                        const emptyCell = document.createElement('div');
+                        emptyCell.className = 'day-cell empty';
+                        container.appendChild(emptyCell);
+                    }
+                }
+            }
+        }
     </script>
 </body>
 </html>
-
-
-
-
-
-
